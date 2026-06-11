@@ -19,8 +19,15 @@ def register(request):
     User.objects.create_user(username=username, password=password, email=email)
     return Response({'message': 'User created successfully'}, status=201)
 
+# dashboard Views
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard(request):
+    return Response({'message': f'Welcome, {request.user.username}!'})
 
 # ─── CRUD Views ───────────────────────────────────────────
+
 
 # GET all items / POST new item
 @api_view(['GET', 'POST'])
