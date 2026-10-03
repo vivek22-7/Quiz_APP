@@ -5,6 +5,8 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from .models import Item
 from .serializers import ItemSerializer
+from django.db.models import Count
+from django.db.models.functions import TruncDate
 
 
 # ─── Auth Views ───────────────────────────────────────────
@@ -69,3 +71,29 @@ def item_detail(request, pk):
     if request.method == 'DELETE':
         item.delete()
         return Response({'message': 'Item deleted'}, status=204)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def item_stats(request):
+    # Total items
+    total = Item.objects.filter(user=request.user).count()
+
+    # Items per day
+    items_per_day = (
+        Item.objects.filter(user=request.user)
+        .annotate(date=TruncDate('created_at'))
+        .values('date')
+        .annotate(count=Count('id'))
+        .order_by('date')
+    )
+
+    daily_data = [
+        {'date': str(entry['date']), 'count': entry['count']}
+        for entry in items_per_day
+    ]
+
+    return Response({
+        'total_items': total,
+        'daily_data': daily_data,
+    })
